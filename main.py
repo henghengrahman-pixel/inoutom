@@ -262,6 +262,37 @@ async def status(update, context):
 
     await update.message.reply_text(teks, parse_mode="Markdown")
 
+async def unblacklist(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id not in ADMIN_IDS:
+        return await update.message.reply_text("❌ Kamu bukan admin.")
+
+    if not context.args:
+        return await update.message.reply_text(
+            "Format salah.\nGunakan:\n`/unblacklist ID_USER`",
+            parse_mode="Markdown"
+        )
+
+    uid = context.args[0].strip()
+
+    if uid in blacklist:
+        nama = blacklist[uid].get("nama", "User")
+        blacklist.pop(uid, None)
+        spam_counter.pop(uid, None)
+        save_blacklist()
+
+        teks = (
+            f"✅ User berhasil di-unblacklist.\n"
+            f"👤 Nama: {nama}\n"
+            f"🆔 ID: `{uid}`"
+        )
+        await update.message.reply_text(teks, parse_mode="Markdown")
+        await kirim_ke_admins(context, f"✅ Admin menghapus blacklist:\n👤 {nama}\n🆔 ID: `{uid}`")
+    else:
+        await update.message.reply_text(
+            "⚠️ ID tersebut tidak ada di blacklist.",
+            parse_mode="Markdown"
+        )
+
 def main():
     load_data()
     load_blacklist()
@@ -271,6 +302,7 @@ def main():
     app.add_handler(CommandHandler("start", show_menu))
     app.add_handler(CommandHandler("id", get_id))
     app.add_handler(CommandHandler("status", status))
+    app.add_handler(CommandHandler("unblacklist", unblacklist))
 
     app.add_handler(MessageHandler(filters.Regex("^(izin|menu)$"), show_menu))
     app.add_handler(CallbackQueryHandler(handle_izin, pattern="^izin_"))
